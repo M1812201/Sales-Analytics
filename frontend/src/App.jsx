@@ -23,21 +23,19 @@ ChartJS.register(
 );
 
 function App() {
-
-  // data state
+  // state
   const [salesData, setSalesData] = useState([]);
-
-  // form state
   const [store, setStore] = useState("");
   const [sales, setSales] = useState("");
-
-  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const API_URL = "https://backend-api-fcni.onrender.com";
+
   // fetch data
   const fetchData = () => {
-    axios.get("https://backend-api-fcni.onrender.com/api/sales")
+    axios
+      .get(`${API_URL}/sales`)
       .then((res) => {
         setSalesData(res.data);
         setLoading(false);
@@ -57,14 +55,19 @@ function App() {
   const addSales = () => {
     if (!store || !sales) return;
 
-    axios.post("http://localhost:5000/sales", {
-      store,
-      sales: Number(sales)
-    }).then(() => {
-      setStore("");
-      setSales("");
-      fetchData(); // refresh data
-    });
+    axios
+      .post(`${API_URL}/sales`, {
+        store,
+        sales: Number(sales)
+      })
+      .then(() => {
+        setStore("");
+        setSales("");
+        fetchData();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   // chart data
@@ -84,7 +87,7 @@ function App() {
     responsive: true,
     plugins: {
       legend: { position: "top" },
-      title: { display: true, text: "AI Sales Analytics Dashboard" }
+      title: { display: true, text: "Sales Analytics Dashboard" }
     }
   };
 
@@ -92,12 +95,11 @@ function App() {
     <div className="min-h-screen bg-gray-100 p-8">
 
       <h1 className="text-4xl font-bold mb-8 text-center">
-        Sales Analytics Dashboard 
+        Sales Analytics Dashboard
       </h1>
 
       {/* FORM */}
       <div className="bg-white p-6 rounded-xl shadow-md mb-8">
-
         <h2 className="text-2xl font-bold mb-4">Add Sales Data</h2>
 
         <input
@@ -122,7 +124,6 @@ function App() {
         >
           Add
         </button>
-
       </div>
 
       {/* STATUS */}
@@ -134,21 +135,12 @@ function App() {
         <>
           {/* CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-
             {salesData.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white p-6 rounded-xl shadow-md"
-              >
-                <h2 className="text-2xl font-semibold">
-                  {item.store}
-                </h2>
-                <p className="text-xl mt-2">
-                  Sales: ₹{item.sales}
-                </p>
+              <div key={index} className="bg-white p-6 rounded-xl shadow-md">
+                <h2 className="text-2xl font-semibold">{item.store}</h2>
+                <p className="text-xl mt-2">Sales: ₹{item.sales}</p>
               </div>
             ))}
-
           </div>
 
           {/* CHART */}
@@ -157,7 +149,6 @@ function App() {
           </div>
         </>
       )}
-
     </div>
   );
 }
