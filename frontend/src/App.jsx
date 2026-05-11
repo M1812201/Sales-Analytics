@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "./api";
+import Navbar from "./components/Navbar";
+import SalesForm from "./components/SalesForm";
+import SalesCard from "./components/SalesCard";
 
 import {
   Chart as ChartJS,
@@ -23,133 +26,92 @@ ChartJS.register(
 );
 
 function App() {
-  // state
-  const [salesData, setSalesData] = useState([]);
-  const [store, setStore] = useState("");
-  const [sales, setSales] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [data, setData] = useState([]);
 
-  const API_URL = "https://backend-api-fcni.onrender.com";
-
-  // fetch data
-  const fetchData = () => {
-    axios
-      .get(`${API_URL}/sales`)
-      .then((res) => {
-        setSalesData(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        setError("Failed to load data");
-        setLoading(false);
-      });
+  const fetchData = async () => {
+    try {
+      const res = await API.get("/sales");
+      setData(res.data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // add data
-  const addSales = () => {
-    if (!store || !sales) return;
-
-    axios
-      .post(`${API_URL}/sales`, {
-        store,
-        sales: Number(sales)
-      })
-      .then(() => {
-        setStore("");
-        setSales("");
-        fetchData();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  // chart data
   const chartData = {
-    labels: salesData.map((item) => item.store),
+    labels: data.map((d) => d.store),
     datasets: [
       {
-        label: "Store Sales (₹)",
-        data: salesData.map((item) => item.sales),
-        backgroundColor: "rgba(59, 130, 246, 0.6)",
-        borderRadius: 6
+        label: "Sales",
+        data: data.map((d) => d.sales),
+        backgroundColor: "rgba(59,130,246,0.6)"
       }
     ]
   };
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" },
-      title: { display: true, text: "Sales Analytics Dashboard" }
-    }
-  };
+  const totalSales = data.reduce(
+    (sum,item)=>sum+item.sales,
+    0
+  );
+
+  const totalStores = data.length;
+
+  const highestSales =
+  data.length>0
+  ? Math.max(...data.map((d)=>d.sales))
+  :0;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="bg-gray-100 min-h-screen">
+      <Navbar />
 
-      <h1 className="text-4xl font-bold mb-8 text-center">
-        Sales Analytics Dashboard
-      </h1>
+      <div className="p-6">
+        <SalesForm refresh={fetchData} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-      {/* FORM */}
-      <div className="bg-white p-6 rounded-xl shadow-md mb-8">
-        <h2 className="text-2xl font-bold mb-4">Add Sales Data</h2>
+  <div className="bg-white p-6 rounded-xl shadow">
+    <h2 className="text-gray-500">Total Sales</h2>
+    <p className="text-3xl font-bold">
+      ₹{totalSales}
+    </p>
+  </div>
 
-        <input
-          type="text"
-          placeholder="Store Name"
-          value={store}
-          className="border p-2 mr-2"
-          onChange={(e) => setStore(e.target.value)}
-        />
+  <div className="bg-white p-6 rounded-xl shadow">
+    <h2 className="text-gray-500">Total Stores</h2>
+    <p className="text-3xl font-bold">
+      {totalStores}
+    </p>
+  </div>
 
-        <input
-          type="number"
-          placeholder="Sales"
-          value={sales}
-          className="border p-2 mr-2"
-          onChange={(e) => setSales(e.target.value)}
-        />
+  <div className="bg-white p-6 rounded-xl shadow">
+    <h2 className="text-gray-500">Highest Sales</h2>
+    <p className="text-3xl font-bold">
+      ₹{highestSales}
+    </p>
+  </div>
 
-        <button
-          onClick={addSales}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Add
-        </button>
+</div>
+
+        <SalesCard
+  data={data}
+  refresh={fetchData}
+/>
+        <div className="bg-white p-4 mt-6 rounded-xl shadow w-full md:w-3/4 mx-auto h-[400px]">
+  <Bar
+    data={chartData}
+    options={{
+      responsive: true,
+      maintainAspectRatio: false
+    }}
+  />
+</div>
       </div>
-
-      {/* STATUS */}
-      {loading && <p className="text-center">Loading...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
-
-      {/* CONTENT */}
-      {!loading && !error && (
-        <>
-          {/* CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {salesData.map((item, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-md">
-                <h2 className="text-2xl font-semibold">{item.store}</h2>
-                <p className="text-xl mt-2">Sales: ₹{item.sales}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* CHART */}
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <Bar data={chartData} options={options} />
-          </div>
-        </>
-      )}
     </div>
+
+    
   );
 }
 

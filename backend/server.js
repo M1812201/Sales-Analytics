@@ -41,3 +41,38 @@ app.post("/sales", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log("Server running"));
+
+app.delete("/sales/:id", async (req, res) => {
+  try {
+    await Sales.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: "Data deleted successfully"
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+app.put("/sales/:id", async (req, res) => {
+  try {
+
+    const updatedData =
+      await Sales.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+
+    res.json(updatedData);
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
